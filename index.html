@@ -3,49 +3,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MarsBase | App Repository</title>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; font-src https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; connect-src 'self';">
-  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <title>MarsBase | Premium App Repository</title>
+  <meta name="description" content="MarsBase Alpha - The premier repository for advanced Android applications including BEEZEE MasterClaw.">
   <link rel="stylesheet" href="index.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
-  <header>
-    <h1>MarsBase</h1>
-    <p>Premium Android Application Repository</p>
-  </header>
+  <!-- Background Elements -->
+  <div class="bg-mesh"></div>
+  <img src="assets/hero-bg.png" alt="" class="bg-image">
+  <div class="bg-hero-overlay"></div>
 
-  <main class="container">
-    <!-- BEEZEE MasterClaw -->
-    <article class="card">
-      <div class="card-header">
-        <div class="app-icon">🐝</div>
-        <div class="app-info">
-          <h2>BEEZEE MasterClaw</h2>
-          <span>Version 1.0 • Android</span>
-        </div>
+  <div class="container">
+    <header>
+      <div class="logo-container">
+        <h1>MarsBase</h1>
       </div>
-      <p class="app-description">
-        Experience the Master Claw system with Beezee. A powerful tool for Hive Core dashboard management and Skin Melt operations.
-      </p>
-      <a href="BEEZEE-MasterClaw-v1.0.apk" class="download-btn">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path>
-          <polyline points="7 10 12 15 17 10"></polyline>
-          <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
-        Download APK
-      </a>
-    </article>
+      <p>The premier frontier for specialized mobile infrastructure and advanced application deployments.</p>
+    </header>
 
-    <!-- Sonic Tuner (Placeholder if found) -->
-    <!-- Add more cards here if needed -->
-  </main>
+    <main class="app-grid">
+      <!-- BEEZEE MasterClaw -->
+      <article class="glass-card">
+        <div class="card-header">
+          <div class="icon-box">🐝</div>
+          <div class="app-meta">
+            <h2>BEEZEE MasterClaw</h2>
+            <span class="badge">v1.0 Stable</span>
+          </div>
+        </div>
+        <p class="description">
+          Engineered for Hive Core dashboard management and high-precision Skin Melt operations. Experience the next generation of mobile command systems.
+        </p>
+        <a href="BEEZEE-MasterClaw-v1.0.apk" class="btn-premium">
+          <i data-lucide="download"></i>
+          Download APK
+        </a>
+      </article>
 
-  <footer>
-    <p>&copy; 2026 MarsBase Alpha. All rights reserved.</p>
-  </footer>
+      <!-- More cards can be added here -->
+    </main>
+
+    <footer>
+      <p>&copy; 2026 MarsBase Alpha Sector. All rights reserved.</p>
+      <p style="margin-top: 0.5rem; opacity: 0.5; font-size: 0.75rem;">Proprietary System Infrastructure</p>
+    </footer>
+  </div>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+  </script>
 </body>
 </html>
