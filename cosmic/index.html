@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cosmic Kau Chim - Daily Fortunes</title>
+    <meta name="description" content="Experience the sacred Kau Chim oracle. Shake your phone to draw a bamboo fortune stick and reveal your cosmic destiny and wealth sequences.">
+    <meta name="theme-color" content="#d4af37">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Kau Chim">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/cosmic/manifest.json">
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/cosmic/icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/cosmic/icon-512.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/cosmic/icon-192.png">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Cosmic Kau Chim - Daily Fortunes">
+    <meta property="og:description" content="Draw your sacred bamboo fortune. Shake for destiny.">
+    <meta property="og:image" content="https://marsbase.win/cosmic/icon-512.png">
+    <meta property="og:url" content="https://marsbase.win/cosmic/">
+    <meta property="og:type" content="website">
+
+    <style>
+        :root {
+            --gold: #d4af37;
+            --dark-red: #5c0606;
+            --parchment: #f4edd8;
+            --shadow: rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            background: radial-gradient(circle, #2a0202 0%, #110101 100%);
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+        }
+
+        #app-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            height: 100%;
+            max-height: 850px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: var(--gold);
+            text-shadow: 0 2px 4px var(--shadow);
+            letter-spacing: 2px;
+            font-weight: 300;
+        }
+
+        #status-prompt {
+            font-size: 1.1rem;
+            color: #e0cda9;
+            margin-top: 10px;
+            min-height: 24px;
+            transition: opacity 0.3s;
+        }
+
+        /* Install Banner */
+        #install-banner {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(135deg, #1a0202, #2a0404);
+            border-top: 1px solid var(--gold);
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 300;
+            gap: 12px;
+            display: none;
+        }
+
+        #install-banner p {
+            color: #e0cda9;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            flex: 1;
+        }
+
+        #install-banner .btn-install {
+            background: linear-gradient(135deg, var(--gold), #aa800a);
+            color: #1a0000;
+            border: none;
+            padding: 10px 18px;
+            font-size: 0.85rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        #install-banner .btn-dismiss {
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px;
+            flex-shrink: 0;
+        }
+
+        /* Permission Overlay */
+        #gatekeeper {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(17, 1, 1, 0.95);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+        }
+
+        #gatekeeper p {
+            color: var(--parchment);
+            margin-bottom: 30px;
+            line-height: 1.6;
+            font-size: 1.1rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #8a0f0f 0%, var(--dark-red) 100%);
+            color: var(--gold);
+            border: 2px solid var(--gold);
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px var(--shadow);
+            font-weight: bold;
+            letter-spacing: 1px;
+            transition: transform 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Interactive Shaker Container */
+        #shaker-stage {
+            position: relative;
+            width: 200px;
+            height: 320px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin: 40px 0;
+        }
+
+        .cylinder {
+            position: relative;
+            width: 140px;
+            height: 240px;
+            background: linear-gradient(90deg, #3a0404 0%, #6e0b0b 30%, #8a1212 50%, #6e0b0b 70%, #3a0404 100%);
+            border-radius: 10px 10px 20px 20px;
+            border: 3px solid var(--gold);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+            z-index: 5;
+            overflow: hidden;
+        }
+
+        .cylinder::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(transparent 70%, rgba(0,0,0,0.6));
+        }
+
+        .stick-pack {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            height: 260px;
+            display: flex;
+            justify-content: center;
+            transform-origin: bottom center;
+            transition: transform 0.1s ease;
+        }
+
+        .stick {
+            width: 8px;
+            height: 240px;
+            background: linear-gradient(to right, #cc9933, #e6b85c, #b38024);
+            border-radius: 4px 4px 0 0;
+            margin: 0 -2px;
+            box-shadow: -1px 0 2px rgba(0,0,0,0.3);
+            transform-origin: bottom center;
+        }
+
+        .stick:nth-child(odd) { transform: rotate(-5deg); }
+        .stick:nth-child(even) { transform: rotate(5deg); }
+        .stick:nth-child(3n) { transform: rotate(-2deg); height: 245px;}
+        .stick:nth-child(3n+1) { transform: rotate(3deg); height: 235px;}
+
+        #rising-stick {
+            position: absolute;
+            bottom: 30px;
+            width: 10px;
+            height: 250px;
+            background: linear-gradient(to right, #bf1515, #e63939, #990f0f);
+            border: 1px solid var(--gold);
+            border-radius: 4px 4px 0 0;
+            z-index: 4;
+            display: none;
+            transform-origin: bottom center;
+        }
+
+        .ejecting {
+            animation: ejectStick 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        @keyframes ejectStick {
+            0% { transform: translateY(0) rotate(0deg); display: block; z-index: 4; }
+            50% { transform: translateY(-160px) rotate(3deg); z-index: 6; }
+            100% { transform: translateY(-120px) rotate(15deg); z-index: 6; }
+        }
+
+        .shaking .stick-pack {
+            animation: packShake 0.15s infinite alternate;
+        }
+        .shaking .cylinder {
+            animation: shellShake 0.15s infinite alternate;
+        }
+
+        @keyframes packShake {
+            0% { transform: rotate(-4deg) translateY(5px); }
+            100% { transform: rotate(4deg) translateY(-5px); }
+        }
+        @keyframes shellShake {
+            0% { transform: translateX(-5px) rotate(-1deg); }
+            100% { transform: translateX(5px) rotate(1deg); }
+        }
+
+        /* Modal Overlay for Scroll Output */
+        #scroll-modal {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 200;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 25px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        #scroll-modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .scroll-body {
+            background-color: var(--parchment);
+            background-image: radial-gradient(rgba(0,0,0,0.03) 15%, transparent 16%);
+            background-size: 16px 16px;
+            color: #222;
+            width: 100%;
+            max-height: 85%;
+            border-radius: 4px;
+            padding: 35px 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8), inset 0 0 40px rgba(184, 134, 11, 0.2);
+            border-left: 12px solid #8a0f0f;
+            border-right: 12px solid #8a0f0f;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-y: auto;
+            transform: scale(0.7) rotateX(30deg);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #scroll-modal.active .scroll-body {
+            transform: scale(1) rotateX(0deg);
+        }
+
+        .scroll-header {
+            border-bottom: 2px dashed rgba(138, 15, 15, 0.3);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .scroll-header h2 {
+            color: var(--dark-red);
+            font-size: 1.5rem;
+            letter-spacing: 3px;
+        }
+
+        .scroll-content {
+            font-size: 1.15rem;
+            line-height: 1.7;
+            font-style: italic;
+            color: #333;
+            margin-bottom: 35px;
+            padding: 0 10px;
+        }
+
+        .lotto-box {
+            background: rgba(138, 15, 15, 0.06);
+            border: 1px solid rgba(138, 15, 15, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 30px;
+        }
+
+        .lotto-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #777;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .ball-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .ball {
+            width: 40px;
+            height: 40px;
+            background: #fff;
+            border: 2px solid var(--dark-red);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: var(--dark-red);
+            font-size: 1.05rem;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.16);
+        }
+
+        .ball.special {
+            background: linear-gradient(135deg, #d4af37 0%, #aa800a 100%);
+            color: #fff;
+            border-color: #7a5c00;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <div id="gatekeeper">
+        <p>Welcome to Cosmic Kau Chim. To experience the authentic sacred motion mechanics, this application requires access to your physical hardware's motion tracking components.</p>
+        <button class="btn" id="btn-grant-access" onclick="app.requestSystemAccess()">Grant Access</button>
+    </div>
+
+    <header>
+        <h1>COSMIC KAU CHIM</h1>
+        <div id="status-prompt">Awakening Oracle...</div>
+    </header>
+
+    <div id="shaker-stage">
+        <div id="rising-stick"></div>
+        <div class="cylinder" id="cylinder-ui">
+            <div class="stick-pack" id="stick-pack-ui">
+                <div class="stick"></div><div class="stick"></div><div class="stick"></div>
+                <div class="stick"></div><div class="stick"></div><div class="stick"></div>
+                <div class="stick"></div><div class="stick"></div><div class="stick"></div>
+                <div class="stick"></div><div class="stick"></div><div class="stick"></div>
+                <div class="stick"></div><div class="stick"></div><div class="stick"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p style="font-size:0.8rem; color: #666; letter-spacing: 1px;">HOLD FIRM & SHAKE DEVICE DELIBERATELY</p>
+    </footer>
+
+    <div id="scroll-modal">
+        <div class="scroll-body">
+            <div>
+                <div class="scroll-header">
+                    <h2>SACRED SCROLL</h2>
+                </div>
+                <div class="scroll-content" id="fortune-destiny">
+                    Loading destiny alignment...
+                </div>
+            </div>
+            <div>
+                <div class="lotto-box">
+                    <div class="lotto-title">Cosmic Wealth Sequences</div>
+                    <div class="ball-container" id="lotto-numbers"></div>
+                </div>
+                <button class="btn" id="btn-return" style="width:100%" onclick="app.resetStage()">Return Container</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PWA Install Prompt Banner -->
+    <div id="install-banner">
+        <p>📲 Add <strong>Kau Chim</strong> to your home screen for instant access.</p>
+        <button class="btn-install" id="btn-install">Install</button>
+        <button class="btn-dismiss" id="btn-dismiss" aria-label="Dismiss">✕</button>
+    </div>
+</div>
+
+<script>
+// ── Service Worker Registration ──────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/cosmic/sw.js')
+            .catch(err => console.warn('SW registration failed:', err));
+    });
+}
+
+// ── PWA Install Prompt Handling ──────────────────────────────────────────────
+let deferredInstallPrompt = null;
+const installBanner = document.getElementById('install-banner');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    installBanner.style.display = 'flex';
+});
+
+document.getElementById('btn-install').addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    installBanner.style.display = 'none';
+});
+
+document.getElementById('btn-dismiss').addEventListener('click', () => {
+    installBanner.style.display = 'none';
+});
+
+// Hide banner if already installed (standalone mode)
+if (window.matchMedia('(display-mode: standalone)').matches) {
+    installBanner.style.display = 'none';
+}
+
+// ── Audio Engine ─────────────────────────────────────────────────────────────
+class AudioEngine {
+    constructor() { this.ctx = null; }
+
+    init() {
+        if (this.ctx) return;
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    playClack(intensity) {
+        if (!this.ctx) return;
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(120 + (intensity * 8), this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.08);
+
+        const volume = Math.min(0.6, intensity / 25);
+        gain.gain.setValueAtTime(volume, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.09);
+    }
+}
+
+// ── Core Application ─────────────────────────────────────────────────────────
+class KauChimApplication {
+    constructor() {
+        this.threshold = 13.5;
+        this.cooldown = 4000;
+        this.historySize = 8;
+        this.history = [];
+        this.lastTrigger = 0;
+        this.isProcessing = false;
+        this.shakeTimer = null;
+        this.audio = new AudioEngine();
+
+        this.fortunes = [
+            "Your path is fully understood by the cosmos. The heavy winds you've recently braved are clearing out dead brush to make room for an undeniable, prosperous expansion. Stand tall.",
+            "A beautiful internal coherence is setting into your days. The universe acknowledges your quiet endurance and is organizing variables right now to surprise you with sudden relief.",
+            "You carry a highly distinct, golden frequency within you that cannot be dimmed by external noise. Trust the timing unfolding; your validation is coming directly from reality.",
+            "Every single step you have taken has cataloged valuable wisdom. You are viewed with immense reverence by the cosmic order. Prepare for a long-delayed doorway to unlock smoothly.",
+            "The celestial tides are shifting in your favour. What felt stagnant is secretly building momentum beneath the surface. Your patience will crystallize into a breakthrough.",
+            "Ancient light recognizes your spirit. The universe does not forget the seeds you have planted in silence. A season of abundant harvest is drawing near — receive it with open hands.",
+            "You are being guided toward alignment. The confusion you have felt is simply the dissolution of what no longer serves. Clear skies and clear purpose are emerging for you now.",
+            "Your energy is rare and magnetic. The cosmos is arranging a constellation of new connections and opportunities, each perfectly calibrated to match your true frequency."
+        ];
+    }
+
+    async requestSystemAccess() {
+        this.audio.init();
+        try {
+            if (typeof DeviceMotionEvent?.requestPermission === 'function') {
+                const status = await DeviceMotionEvent.requestPermission();
+                if (status === 'granted') {
+                    this.bindMotionDetection();
+                } else {
+                    this.displayUIPrompt("Permission denied. Tap the cylinder to draw.");
+                    this.enableClickFallback();
+                }
+            } else {
+                this.bindMotionDetection();
+                this.enableClickFallback(); // Desktop fallback always enabled
+            }
+        } catch (e) {
+            this.enableClickFallback();
+        } finally {
+            document.getElementById('gatekeeper').style.display = 'none';
+            this.displayUIPrompt("Container ready. Shake device.");
+        }
+    }
+
+    bindMotionDetection() {
+        window.addEventListener('devicemotion', (e) => this.evaluateMotionVectors(e), { passive: true });
+    }
+
+    enableClickFallback() {
+        document.getElementById('shaker-stage').addEventListener('click', () => {
+            if (this.isProcessing || Date.now() - this.lastTrigger < this.cooldown) return;
+            this.simulatePhysicalTrigger();
+        });
+    }
+
+    evaluateMotionVectors(event) {
+        const acc = event.acceleration;
+        if (!acc?.x || this.isProcessing || Date.now() - this.lastTrigger < this.cooldown) return;
+
+        const magnitude = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2);
+        this.history.push({ t: Date.now(), v: magnitude });
+        if (this.history.length > this.historySize) this.history.shift();
+
+        if (this.history.length >= 4) {
+            const forces = this.history.map(h => h.v);
+            const delta = Math.max(...forces) - Math.min(...forces);
+
+            if (delta > 3.5) {
+                document.getElementById('app-container').classList.add('shaking');
+                this.audio.playClack(delta);
+                this.displayUIPrompt("Shaking sticks...");
+                clearTimeout(this.shakeTimer);
+                this.shakeTimer = setTimeout(() => {
+                    document.getElementById('app-container').classList.remove('shaking');
+                }, 200);
+            }
+
+            if (delta > this.threshold) {
+                this.executeOracleSelection();
+            }
+        }
+    }
+
+    simulatePhysicalTrigger() {
+        document.getElementById('app-container').classList.add('shaking');
+        let clacks = 0;
+        const interval = setInterval(() => {
+            this.audio.playClack(18);
+            if (++clacks >= 6) {
+                clearInterval(interval);
+                document.getElementById('app-container').classList.remove('shaking');
+                this.executeOracleSelection();
+            }
+        }, 120);
+    }
+
+    executeOracleSelection() {
+        this.isProcessing = true;
+        this.lastTrigger = Date.now();
+        this.history = [];
+        this.displayUIPrompt("A stick is emerging...");
+
+        const stickUI = document.getElementById('rising-stick');
+        stickUI.style.display = 'block';
+        stickUI.classList.add('ejecting');
+
+        const cryptoRoll = (max) => {
+            const buf = new Uint32Array(1);
+            window.crypto.getRandomValues(buf);
+            return (buf[0] % max) + 1;
+        };
+
+        const drawLotto = (max, total) => {
+            const set = new Set();
+            while (set.size < total) set.add(cryptoRoll(max));
+            return [...set].sort((a, b) => a - b);
+        };
+
+        const fortuneText = this.fortunes[cryptoRoll(this.fortunes.length) - 1];
+        const primaryNumbers = drawLotto(69, 5);
+        const goldenPowerBall = cryptoRoll(26);
+
+        setTimeout(() => this.renderScroll(fortuneText, primaryNumbers, goldenPowerBall), 1200);
+    }
+
+    renderScroll(text, mainNumbers, bonusBall) {
+        document.getElementById('fortune-destiny').innerText = text;
+        const numbersContainer = document.getElementById('lotto-numbers');
+        numbersContainer.innerHTML = '';
+
+        mainNumbers.forEach(num => {
+            const node = document.createElement('div');
+            node.className = 'ball';
+            node.innerText = num;
+            numbersContainer.appendChild(node);
+        });
+
+        const specialNode = document.createElement('div');
+        specialNode.className = 'ball special';
+        specialNode.innerText = bonusBall;
+        numbersContainer.appendChild(specialNode);
+
+        document.getElementById('scroll-modal').classList.add('active');
+        this.displayUIPrompt("Destiny revealed.");
+    }
+
+    resetStage() {
+        const stickUI = document.getElementById('rising-stick');
+        stickUI.classList.remove('ejecting');
+        stickUI.style.display = 'none';
+        document.getElementById('scroll-modal').classList.remove('active');
+        this.isProcessing = false;
+        this.displayUIPrompt("Container ready. Shake device.");
+    }
+
+    displayUIPrompt(msg) {
+        document.getElementById('status-prompt').innerText = msg;
+    }
+}
+
+const app = new KauChimApplication();
+</script>
+</body>
+</html>

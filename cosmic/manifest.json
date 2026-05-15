@@ -1,0 +1,27 @@
+{
+  "name": "Cosmic Kau Chim",
+  "short_name": "Kau Chim",
+  "description": "Sacred bamboo oracle fortune-telling app with cosmic wealth sequences.",
+  "start_url": "/cosmic/",
+  "scope": "/cosmic/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#110101",
+  "theme_color": "#d4af37",
+  "lang": "en",
+  "categories": ["entertainment", "lifestyle"],
+  "icons": [
+    {
+      "src": "/cosmic/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/cosmic/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
