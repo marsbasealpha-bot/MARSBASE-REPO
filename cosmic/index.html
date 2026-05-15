@@ -189,9 +189,14 @@
             background: linear-gradient(90deg, #3a0404 0%, #6e0b0b 30%, #8a1212 50%, #6e0b0b 70%, #3a0404 100%);
             border-radius: 10px 10px 20px 20px;
             border: 3px solid var(--gold);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7), 0 0 0 0 rgba(212,175,55,0);
             z-index: 5;
-            overflow: hidden;
+            overflow: visible;
+            transition: box-shadow 0.2s ease;
+        }
+
+        .cylinder.charging {
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7), 0 0 20px 4px rgba(212,175,55,0.35);
         }
 
         .cylinder::after {
@@ -199,8 +204,10 @@
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(transparent 70%, rgba(0,0,0,0.6));
+            pointer-events: none;
         }
 
+        /* stick-pack moves up via JS transform; no CSS transition (rAF handles smoothness) */
         .stick-pack {
             position: absolute;
             bottom: 30px;
@@ -209,7 +216,15 @@
             display: flex;
             justify-content: center;
             transform-origin: bottom center;
-            transition: transform 0.1s ease;
+        }
+
+        /* Inner wrapper handles the shake wiggle animation independently */
+        .stick-inner {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            transform-origin: bottom center;
         }
 
         .stick {
@@ -250,7 +265,8 @@
             100% { transform: translateY(-120px) rotate(15deg); z-index: 6; }
         }
 
-        .shaking .stick-pack {
+        /* Shake animations on inner wrapper — won't conflict with stick-pack translateY */
+        .shaking .stick-inner {
             animation: packShake 0.15s infinite alternate;
         }
         .shaking .cylinder {
@@ -394,11 +410,13 @@
         <div id="rising-stick"></div>
         <div class="cylinder" id="cylinder-ui">
             <div class="stick-pack" id="stick-pack-ui">
-                <div class="stick"></div><div class="stick"></div><div class="stick"></div>
-                <div class="stick"></div><div class="stick"></div><div class="stick"></div>
-                <div class="stick"></div><div class="stick"></div><div class="stick"></div>
-                <div class="stick"></div><div class="stick"></div><div class="stick"></div>
-                <div class="stick"></div><div class="stick"></div><div class="stick"></div>
+                <div class="stick-inner" id="stick-inner-ui">
+                    <div class="stick"></div><div class="stick"></div><div class="stick"></div>
+                    <div class="stick"></div><div class="stick"></div><div class="stick"></div>
+                    <div class="stick"></div><div class="stick"></div><div class="stick"></div>
+                    <div class="stick"></div><div class="stick"></div><div class="stick"></div>
+                    <div class="stick"></div><div class="stick"></div><div class="stick"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -505,13 +523,23 @@ class AudioEngine {
 // ── Core Application ─────────────────────────────────────────────────────────
 class KauChimApplication {
     constructor() {
-        this.threshold = 13.5;
+        // Motion detection config
+        this.historySize = 6;
+        this.shakeDetectThreshold = 3.5; // delta to count as a shake
         this.cooldown = 4000;
-        this.historySize = 8;
         this.history = [];
         this.lastTrigger = 0;
         this.isProcessing = false;
-        this.shakeTimer = null;
+
+        // Charge system
+        this.charge = 0;           // 0..1
+        this.chargeRate = 1 / 3000; // fills over 3 000 ms
+        this.decayRate  = 1 / 1500; // drains over 1 500 ms
+        this.isActivelyShaking = false;
+        this.shakeTimeoutId = null;
+        this.lastFrameTime = null;
+        this.rafId = null;
+
         this.audio = new AudioEngine();
 
         this.fortunes = [
@@ -534,30 +562,115 @@ class KauChimApplication {
                 if (status === 'granted') {
                     this.bindMotionDetection();
                 } else {
-                    this.displayUIPrompt("Permission denied. Tap the cylinder to draw.");
-                    this.enableClickFallback();
+                    this.displayUIPrompt("Hold the cylinder to charge.");
+                    this.enableHoldFallback();
                 }
             } else {
                 this.bindMotionDetection();
-                this.enableClickFallback(); // Desktop fallback always enabled
+                this.enableHoldFallback(); // Desktop: press & hold
             }
         } catch (e) {
-            this.enableClickFallback();
+            this.enableHoldFallback();
         } finally {
             document.getElementById('gatekeeper').style.display = 'none';
             this.displayUIPrompt("Container ready. Shake device.");
+            this.startChargeLoop();
         }
+    }
+
+    // ── rAF charge loop ────────────────────────────────────────────────────────
+    startChargeLoop() {
+        const loop = (timestamp) => {
+            if (!this.isProcessing) {
+                if (this.lastFrameTime !== null) {
+                    const dt = Math.min(timestamp - this.lastFrameTime, 100); // cap dt
+                    if (this.isActivelyShaking) {
+                        this.charge = Math.min(1, this.charge + this.chargeRate * dt);
+                    } else {
+                        this.charge = Math.max(0, this.charge - this.decayRate * dt);
+                    }
+                    this.applyChargeVisuals();
+                    if (this.charge >= 1) {
+                        this.executeOracleSelection();
+                        return; // pause loop until reset
+                    }
+                }
+                this.lastFrameTime = timestamp;
+            }
+            this.rafId = requestAnimationFrame(loop);
+        };
+        this.rafId = requestAnimationFrame(loop);
+    }
+
+    applyChargeVisuals() {
+        const stickPack = document.getElementById('stick-pack-ui');
+        const cylinder  = document.getElementById('cylinder-ui');
+        const container = document.getElementById('app-container');
+
+        // Sticks rise up to 95px out of cylinder top
+        stickPack.style.transform = `translateY(${-(this.charge * 95)}px)`;
+
+        // Gold glow intensifies with charge
+        if (this.charge > 0.05) {
+            cylinder.classList.add('charging');
+        } else {
+            cylinder.classList.remove('charging');
+        }
+
+        // Shake animation only when actively shaking
+        if (this.isActivelyShaking) {
+            container.classList.add('shaking');
+        } else {
+            container.classList.remove('shaking');
+        }
+
+        // Status prompt
+        if (this.charge > 0.02) {
+            const secsLeft = Math.ceil((1 - this.charge) * 3);
+            if (this.isActivelyShaking) {
+                this.displayUIPrompt(secsLeft > 0 ? `Keep shaking... ${secsLeft}s` : "Almost there!");
+            } else {
+                this.displayUIPrompt("Don't stop — keep shaking!");
+            }
+        } else {
+            this.displayUIPrompt("Container ready. Shake device.");
+        }
+    }
+
+    // Mark as actively shaking; auto-clears after 300 ms of no motion
+    markShaking(intensity) {
+        this.isActivelyShaking = true;
+        this.audio.playClack(intensity);
+        clearTimeout(this.shakeTimeoutId);
+        this.shakeTimeoutId = setTimeout(() => {
+            this.isActivelyShaking = false;
+        }, 300);
     }
 
     bindMotionDetection() {
         window.addEventListener('devicemotion', (e) => this.evaluateMotionVectors(e), { passive: true });
     }
 
-    enableClickFallback() {
-        document.getElementById('shaker-stage').addEventListener('click', () => {
+    // Press-and-hold fallback for desktop / no-motion permission
+    enableHoldFallback() {
+        const stage = document.getElementById('shaker-stage');
+        let holdInterval = null;
+
+        const startHold = () => {
             if (this.isProcessing || Date.now() - this.lastTrigger < this.cooldown) return;
-            this.simulatePhysicalTrigger();
-        });
+            holdInterval = setInterval(() => this.markShaking(18), 140);
+        };
+        const stopHold = () => {
+            clearInterval(holdInterval);
+            holdInterval = null;
+        };
+
+        stage.addEventListener('mousedown',  startHold);
+        stage.addEventListener('mouseup',    stopHold);
+        stage.addEventListener('mouseleave', stopHold);
+        stage.addEventListener('touchstart', startHold, { passive: true });
+        stage.addEventListener('touchend',   stopHold);
+        stage.addEventListener('touchcancel',stopHold);
     }
 
     evaluateMotionVectors(event) {
@@ -570,41 +683,24 @@ class KauChimApplication {
 
         if (this.history.length >= 4) {
             const forces = this.history.map(h => h.v);
-            const delta = Math.max(...forces) - Math.min(...forces);
-
-            if (delta > 3.5) {
-                document.getElementById('app-container').classList.add('shaking');
-                this.audio.playClack(delta);
-                this.displayUIPrompt("Shaking sticks...");
-                clearTimeout(this.shakeTimer);
-                this.shakeTimer = setTimeout(() => {
-                    document.getElementById('app-container').classList.remove('shaking');
-                }, 200);
-            }
-
-            if (delta > this.threshold) {
-                this.executeOracleSelection();
+            const delta  = Math.max(...forces) - Math.min(...forces);
+            if (delta > this.shakeDetectThreshold) {
+                this.markShaking(delta);
             }
         }
-    }
-
-    simulatePhysicalTrigger() {
-        document.getElementById('app-container').classList.add('shaking');
-        let clacks = 0;
-        const interval = setInterval(() => {
-            this.audio.playClack(18);
-            if (++clacks >= 6) {
-                clearInterval(interval);
-                document.getElementById('app-container').classList.remove('shaking');
-                this.executeOracleSelection();
-            }
-        }, 120);
     }
 
     executeOracleSelection() {
         this.isProcessing = true;
         this.lastTrigger = Date.now();
         this.history = [];
+        this.charge = 0;
+        this.isActivelyShaking = false;
+        clearTimeout(this.shakeTimeoutId);
+        document.getElementById('app-container').classList.remove('shaking');
+        document.getElementById('cylinder-ui').classList.remove('charging');
+        // Reset sticks to base position before eject animation
+        document.getElementById('stick-pack-ui').style.transform = 'translateY(0)';
         this.displayUIPrompt("A stick is emerging...");
 
         const stickUI = document.getElementById('rising-stick');
@@ -656,8 +752,12 @@ class KauChimApplication {
         stickUI.classList.remove('ejecting');
         stickUI.style.display = 'none';
         document.getElementById('scroll-modal').classList.remove('active');
+        this.charge = 0;
+        this.lastFrameTime = null;
         this.isProcessing = false;
         this.displayUIPrompt("Container ready. Shake device.");
+        // Resume charge loop
+        this.startChargeLoop();
     }
 
     displayUIPrompt(msg) {
