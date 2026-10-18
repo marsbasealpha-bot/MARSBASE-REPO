@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cosmic Kau Chim - Daily Fortunes</title>
+    <meta name="description" content="Experience the sacred Kau Chim oracle. Shake your phone (or press and hold) to draw one of 100 numbered bamboo fortune sticks and reveal your cosmic destiny and wealth sequences.">
+    <meta name="theme-color" content="#d4af37">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Kau Chim">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/Cosmic-Kau-Chim/manifest.json">
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/Cosmic-Kau-Chim/icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/Cosmic-Kau-Chim/icon-512.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/Cosmic-Kau-Chim/icon-192.png">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Cosmic Kau Chim - Daily Fortunes">
+    <meta property="og:description" content="Draw your sacred bamboo fortune. Shake for destiny.">
+    <meta property="og:image" content="https://marsbase.win/Cosmic-Kau-Chim/icon-512.png">
+    <meta property="og:url" content="https://marsbase.win/Cosmic-Kau-Chim/">
+    <meta property="og:type" content="website">
+
+    <style>
+        :root {
+            --gold: #d4af37;
+            --dark-red: #5c0606;
+            --parchment: #f4edd8;
+            --shadow: rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            background: radial-gradient(circle, #2a0202 0%, #110101 100%);
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+        }
+
+        #app-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            height: 100%;
+            max-height: 850px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 40px 20px calc(40px + env(safe-area-inset-bottom, 0px));
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: var(--gold);
+            text-shadow: 0 2px 4px var(--shadow);
+            letter-spacing: 2px;
+            font-weight: 300;
+        }
+
+        #status-prompt {
+            font-size: 1.1rem;
+            color: #e0cda9;
+            margin-top: 10px;
+            min-height: 24px;
+            transition: opacity 0.3s;
+        }
+
+        /* Install Banner */
+        #install-banner {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 450px;
+            background: linear-gradient(135deg, #1a0202, #2a0404);
+            border-top: 1px solid var(--gold);
+            padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px));
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 300;
+            gap: 12px;
+            display: none;
+        }
+
+        /* While the banner is showing, reserve room so it never covers the footer */
+        body.banner-visible #app-container {
+            padding-bottom: calc(var(--banner-h, 72px) + 12px);
+        }
+
+        #install-banner p {
+            color: #e0cda9;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            flex: 1;
+        }
+
+        #install-banner .btn-install {
+            background: linear-gradient(135deg, var(--gold), #aa800a);
+            color: #1a0000;
+            border: none;
+            padding: 10px 18px;
+            font-size: 0.85rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        #install-banner .btn-dismiss {
+            background: none;
+            border: none;
+            color: #b8a27a;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 8px;
+            min-width: 36px;
+            min-height: 36px;
+            flex-shrink: 0;
+        }
+
+        /* Permission Overlay */
+        #gatekeeper {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(17, 1, 1, 0.95);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+        }
+
+        #gatekeeper p {
+            color: var(--parchment);
+            margin-bottom: 30px;
+            line-height: 1.6;
+            font-size: 1.1rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #8a0f0f 0%, var(--dark-red) 100%);
+            color: var(--gold);
+            border: 2px solid var(--gold);
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px var(--shadow);
+            font-weight: bold;
+            letter-spacing: 1px;
+            transition: transform 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Interactive Shaker Container */
+        #shaker-stage {
+            position: relative;
+            width: 200px;
+            height: 320px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin: 40px 0;
+            cursor: pointer;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+        }
+
+        #shaker-stage:focus-visible .cylinder {
+            outline: 2px dashed var(--gold);
+            outline-offset: 6px;
+        }
+
+        .cylinder {
+            position: relative;
+            width: 140px;
+            height: 240px;
+            background: linear-gradient(90deg, #3a0404 0%, #6e0b0b 30%, #8a1212 50%, #6e0b0b 70%, #3a0404 100%);
+            border-radius: 10px 10px 20px 20px;
+            border: 3px solid var(--gold);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7), 0 0 0 0 rgba(212,175,55,0);
+            z-index: 5;
+            overflow: visible;
+            transition: box-shadow 0.2s ease;
+        }
+
+        .cylinder.charging {
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7), 0 0 20px 4px rgba(212,175,55,0.35);
+        }
+
+        .cylinder::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(transparent 70%, rgba(0,0,0,0.6));
+            pointer-events: none;
+        }
+
+        /* stick-pack moves up via JS transform; no CSS transition (rAF handles smoothness) */
+        .stick-pack {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            height: 260px;
+            display: flex;
+            justify-content: center;
+            transform-origin: bottom center;
+        }
+
+        /* Inner wrapper handles the shake wiggle animation independently */
+        .stick-inner {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            transform-origin: bottom center;
+        }
+
+        .stick {
+            width: 8px;
+            height: 240px;
+            background: linear-gradient(to right, #cc9933, #e6b85c, #b38024);
+            border-radius: 4px 4px 0 0;
+            margin: 0 -2px;
+            box-shadow: -1px 0 2px rgba(0,0,0,0.3);
+            transform-origin: bottom center;
+        }
+
+        .stick:nth-child(odd) { transform: rotate(-5deg); }
+        .stick:nth-child(even) { transform: rotate(5deg); }
+        .stick:nth-child(3n) { transform: rotate(-2deg); height: 245px;}
+        .stick:nth-child(3n+1) { transform: rotate(3deg); height: 235px;}
+
+        #rising-stick {
+            position: absolute;
+            bottom: 30px;
+            width: 18px;
+            height: 250px;
+            background: linear-gradient(to right, #bf1515, #e63939, #990f0f);
+            border: 1px solid var(--gold);
+            border-radius: 4px 4px 0 0;
+            z-index: 4;
+            display: none;
+            transform-origin: bottom center;
+        }
+
+        #rising-stick-label {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            color: var(--gold);
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.6);
+        }
+
+        .ejecting {
+            animation: ejectStick 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        @keyframes ejectStick {
+            0% { transform: translateY(0) rotate(0deg); display: block; z-index: 4; }
+            50% { transform: translateY(-160px) rotate(3deg); z-index: 6; }
+            100% { transform: translateY(-120px) rotate(15deg); z-index: 6; }
+        }
+
+        /* Shake animations on inner wrapper — won't conflict with stick-pack translateY */
+        .shaking .stick-inner {
+            animation: packShake 0.15s infinite alternate;
+        }
+        .shaking .cylinder {
+            animation: shellShake 0.15s infinite alternate;
+        }
+
+        @keyframes packShake {
+            0% { transform: rotate(-4deg) translateY(5px); }
+            100% { transform: rotate(4deg) translateY(-5px); }
+        }
+        @keyframes shellShake {
+            0% { transform: translateX(-5px) rotate(-1deg); }
+            100% { transform: translateX(5px) rotate(1deg); }
+        }
+
+        /* Modal Overlay for Scroll Output */
+        #scroll-modal {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 200;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 25px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        #scroll-modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .scroll-body {
+            background-color: var(--parchment);
+            background-image: radial-gradient(rgba(0,0,0,0.03) 15%, transparent 16%);
+            background-size: 16px 16px;
+            color: #222;
+            width: 100%;
+            max-height: 85%;
+            border-radius: 4px;
+            padding: 35px 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8), inset 0 0 40px rgba(184, 134, 11, 0.2);
+            border-left: 12px solid #8a0f0f;
+            border-right: 12px solid #8a0f0f;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-y: auto;
+            transform: scale(0.7) rotateX(30deg);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #scroll-modal.active .scroll-body {
+            transform: scale(1) rotateX(0deg);
+        }
+
+        .scroll-header {
+            border-bottom: 2px dashed rgba(138, 15, 15, 0.3);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .scroll-header h2 {
+            color: var(--dark-red);
+            font-size: 1.5rem;
+            letter-spacing: 3px;
+        }
+
+        .stick-number {
+            margin-top: 10px;
+            font-size: 1.9rem;
+            font-weight: bold;
+            color: #8a0f0f;
+            letter-spacing: 1px;
+        }
+
+        .fortune-level {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 3px 14px;
+            border-radius: 14px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border: 1px solid currentColor;
+        }
+        .fortune-level.lvl-great   { color: #a07800; background: rgba(212,175,55,0.15); }
+        .fortune-level.lvl-good    { color: #2f6b2f; background: rgba(47,107,47,0.08); }
+        .fortune-level.lvl-fair    { color: #555;    background: rgba(0,0,0,0.05); }
+        .fortune-level.lvl-caution { color: #8a0f0f; background: rgba(138,15,15,0.08); }
+
+        .scroll-content {
+            font-size: 1.15rem;
+            line-height: 1.7;
+            font-style: italic;
+            color: #333;
+            margin-bottom: 35px;
+            padding: 0 10px;
+        }
+
+        .lotto-box {
+            background: rgba(138, 15, 15, 0.06);
+            border: 1px solid rgba(138, 15, 15, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 30px;
+        }
+
+        .lotto-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #777;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .ball-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .ball {
+            width: 40px;
+            height: 40px;
+            background: #fff;
+            border: 2px solid var(--dark-red);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: var(--dark-red);
+            font-size: 1.05rem;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.16);
+        }
+
+        .ball.special {
+            background: linear-gradient(135deg, #d4af37 0%, #aa800a 100%);
+            color: #fff;
+            border-color: #7a5c00;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <div id="gatekeeper">
+        <p>Welcome to Cosmic Kau Chim. To experience the authentic sacred motion mechanics, this application requires access to your physical hardware's motion tracking components. No motion sensor? You can press and hold the cup instead.</p>
+        <button class="btn" id="btn-grant-access">Grant Access</button>
+    </div>
+
+    <header>
+        <h1>COSMIC KAU CHIM</h1>
+        <div id="status-prompt">Awakening Oracle...</div>
+    </header>
+
+    <div id="shaker-stage" tabindex="0" role="button" aria-label="Press and hold to shake the fortune cup">
+        <div id="rising-stick"><span id="rising-stick-label"></span></div>
+        <div class="cylinder" id="cylinder-ui">
+            <div class="stick-pack" id="stick-pack-ui">
+                <div class="stick-inner" id="stick-inner-ui">
+                    <div class="stick"></div><div class="stick"></div><div class="stick"></div>
+                    <div class="stick"></div><div class="stick"></div><div class="stick"></div>
+                    <div class="stick"></div><div class="stick"></div><div class="stick"></div>
+                    <div class="stick"></div><div class="stick"></div><div class="stick"></div>
+                    <div class="stick"></div><div class="stick"></div><div class="stick"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p id="footer-hint" style="font-size:0.8rem; color: #666; letter-spacing: 1px;">HOLD FIRM & SHAKE DEVICE DELIBERATELY — OR PRESS & HOLD THE CUP</p>
+    </footer>
+
+    <div id="scroll-modal">
+        <div class="scroll-body">
+            <div>
+                <div class="scroll-header">
+                    <h2>SACRED SCROLL</h2>
+                    <div class="stick-number" id="stick-number">Stick No. —</div>
+                    <div class="fortune-level" id="fortune-level"></div>
+                </div>
+                <div class="scroll-content" id="fortune-destiny">
+                    Loading destiny alignment...
+                </div>
+            </div>
+            <div>
+                <div class="lotto-box">
+                    <div class="lotto-title">Cosmic Wealth Sequences</div>
+                    <div class="ball-container" id="lotto-numbers"></div>
+                </div>
+                <button class="btn" id="btn-return" style="width:100%">Return Container</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PWA Install Prompt Banner -->
+    <div id="install-banner">
+        <p>📲 Add <strong>Kau Chim</strong> to your home screen for instant access.</p>
+        <button class="btn-install" id="btn-install">Install</button>
+        <button class="btn-dismiss" id="btn-dismiss" aria-label="Dismiss">✕</button>
+    </div>
+</div>
+
+<script data-cfasync="false">
+// ── Service Worker Registration ──────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/Cosmic-Kau-Chim/sw.js', { scope: '/Cosmic-Kau-Chim/' })
+            .catch(err => console.warn('SW registration failed:', err));
+    });
+}
+
+// ── Small storage helpers (localStorage can throw in private mode) ──────────
+const store = {
+    get(key, fallback) {
+        try { const v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); }
+        catch (e) { return fallback; }
+    },
+    set(key, value) {
+        try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* ignore */ }
+    }
+};
+
+// ── PWA Install Prompt Handling ──────────────────────────────────────────────
+let deferredInstallPrompt = null;
+let installBannerTimer = null;
+const installBanner = document.getElementById('install-banner');
+const INSTALL_DISMISS_KEY = 'kauchim-install-dismissed';
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+function showInstallBanner() {
+    if (isStandalone || store.get(INSTALL_DISMISS_KEY, false)) return;
+    installBanner.style.display = 'flex';
+    document.body.classList.add('banner-visible');
+    document.documentElement.style.setProperty('--banner-h', installBanner.offsetHeight + 'px');
+    clearTimeout(installBannerTimer);
+    installBannerTimer = setTimeout(hideInstallBanner, 8000); // auto-hide
+}
+
+function hideInstallBanner() {
+    clearTimeout(installBannerTimer);
+    installBanner.style.display = 'none';
+    document.body.classList.remove('banner-visible');
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    showInstallBanner();
+});
+
+window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    hideInstallBanner();
+});
+
+document.getElementById('btn-install').addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    try { await deferredInstallPrompt.userChoice; } catch (e) { /* ignore */ }
+    deferredInstallPrompt = null;
+    hideInstallBanner();
+});
+
+document.getElementById('btn-dismiss').addEventListener('click', () => {
+    store.set(INSTALL_DISMISS_KEY, true); // remember dismissal
+    hideInstallBanner();
+});
+
+// ── Audio Engine ─────────────────────────────────────────────────────────────
+class AudioEngine {
+    constructor() { this.ctx = null; }
+
+    init() {
+        if (this.ctx) return;
+        try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+        catch (e) { this.ctx = null; }
+    }
+
+    playClack(intensity) {
+        if (!this.ctx) return;
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(120 + (intensity * 8), this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.08);
+
+        const volume = Math.min(0.6, intensity / 25);
+        gain.gain.setValueAtTime(volume, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.09);
+    }
+}
+
+// ── The 100 sticks (original text) ───────────────────────────────────────────
+// Level codes: G = Great Fortune, B = Good Fortune, F = Fair Fortune, C = Caution
+const FORTUNE_LEVELS = {
+    G: { label: 'Great Fortune', cls: 'lvl-great' },
+    B: { label: 'Good Fortune',  cls: 'lvl-good' },
+    F: { label: 'Fair Fortune',  cls: 'lvl-fair' },
+    C: { label: 'Caution',       cls: 'lvl-caution' }
+};
+
+// Index + 1 = stick number
+const STICKS = [
+    ['G', "The first stick opens the gate. What you begin this season is blessed at the root; plant boldly and tend it daily."],
+    ['B', "A quiet helper is already walking toward you. Accept the hand that is offered without pride."],
+    ['F', "The river is wide but the ferry is coming. Wait at the bank; do not try to swim across."],
+    ['C', "Words spoken in haste travel far. Guard your tongue for seven days and trouble passes you by."],
+    ['G', "Your path is fully understood by the cosmos. The heavy winds you've recently braved are clearing out dead brush to make room for an undeniable, prosperous expansion. Stand tall."],
+    ['B', "Money that has been slow to arrive is loosening. Keep your accounts tidy so you are ready to receive it."],
+    ['F', "A small delay protects you from a larger mistake. Thank the obstacle and adjust your route."],
+    ['B', "Your family hearth grows warmer. Share a meal and old misunderstandings soften."],
+    ['C', "The lantern is bright but the oil runs low. Rest before you are forced to."],
+    ['G', "A beautiful internal coherence is setting into your days. The universe acknowledges your quiet endurance and is organizing variables right now to surprise you with sudden relief."],
+    ['F', "Two roads look alike. Choose the one where you can still see your footprints leading home."],
+    ['B', "A skill you practised in private will be noticed in public. Keep polishing it."],
+    ['F', "The moon waxes slowly. Progress is real even when you cannot see it from night to night."],
+    ['C', "Do not lend what you cannot afford to lose this month. Generosity must have a floor."],
+    ['B', "A journey, short or long, brings a useful meeting. Pack light and stay curious."],
+    ['G', "You carry a highly distinct, golden frequency within you that cannot be dimmed by external noise. Trust the timing unfolding; your validation is coming directly from reality."],
+    ['F', "The harvest is average, but the granary is safe. Contentment is its own kind of wealth."],
+    ['B', "A letter or message carries good news. Answer it promptly and warmly."],
+    ['C', "A pleasant face hides an unfinished bargain. Read every line before you sign."],
+    ['B', "The crane stands on one leg and stays balanced. Your patience is your strength now."],
+    ['G', "Every single step you have taken has cataloged valuable wisdom. You are viewed with immense reverence by the cosmic order. Prepare for a long-delayed doorway to unlock smoothly."],
+    ['F', "Clouds pass over the mountain but do not move it. Hold your position calmly."],
+    ['B', "New friendships bloom where you give your time freely."],
+    ['C', "The kettle boils over when no one is watching. Attend to small duties before they spill."],
+    ['F', "Half the work is done. Do not celebrate until the roof is on."],
+    ['B', "Your health improves with simple habits: early sleep, warm water and a daily walk."],
+    ['G', "The celestial tides are shifting in your favour. What felt stagnant is secretly building momentum beneath the surface. Your patience will crystallize into a breakthrough."],
+    ['F', "An old debt, owed to you or by you, asks to be settled. Clear it and walk lighter."],
+    ['C', "A rumour is not a fact. Wait for a third witness before you act."],
+    ['B', "The bamboo bends in the storm and stands again at dawn. You are more resilient than you think."],
+    ['F', "Ask advice from someone older; their memory holds your answer."],
+    ['B', "Luck favours the tidy desk. Put your space in order and opportunities will find you."],
+    ['G', "Ancient light recognizes your spirit. The universe does not forget the seeds you have planted in silence. A season of abundant harvest is drawing near; receive it with open hands."],
+    ['C', "Do not chase two rabbits. Choose one goal and the other will wait."],
+    ['F', "The tide goes out so that it can return. A pause now is not a loss."],
+    ['B', "A creative idea is ripe. Write it down tonight before it flies away."],
+    ['F', "The road is long but well paved. Steady steps, no shortcuts."],
+    ['C', "Someone envies your progress. Be kind, be quiet and keep working."],
+    ['G', "You are being guided toward alignment. The confusion you have felt is simply the dissolution of what no longer serves. Clear skies and clear purpose are emerging for you now."],
+    ['B', "A partnership formed now stands on honest ground. Shake hands with confidence."],
+    ['F', "What you lost may not return, but something better will fit the empty space."],
+    ['B', "Your reputation travels ahead of you, and it is good. Live up to it."],
+    ['C', "Avoid risky wagers this week. The dice are cold."],
+    ['F', "Plant now, harvest later. Do not dig up the seed to check whether it is growing."],
+    ['G', "Your energy is rare and magnetic. The cosmos is arranging a constellation of new connections and opportunities, each perfectly calibrated to match your true frequency."],
+    ['B', "The door you knocked on months ago is about to open. Be ready to walk through."],
+    ['F', "A neighbour's quarrel is not yours to settle. Offer tea, not judgement."],
+    ['C', "The ice looks thick but spring is near. Do not walk where you cannot see the bottom."],
+    ['B', "A gift arrives in an unexpected form. Look twice before you dismiss it."],
+    ['G', "The golden carp leaps the dragon gate. A long effort is rewarded with a rise in standing, rank or confidence."],
+    ['F', "Your plans are sound but need one more pair of eyes. Ask before you launch."],
+    ['B', "Young people bring you joy and fresh ideas this season."],
+    ['C', "Fatigue clouds judgement. Make no large decisions after midnight."],
+    ['F', "The wind changes direction three times. Adjust your sails without complaint."],
+    ['B', "Study is blessed. A course, a book or a teacher opens a new door."],
+    ['G', "The phoenix rises from old ashes. What ended has made room for a brilliant beginning."],
+    ['F', "Neither feast nor famine. Keep a modest reserve and you will be comfortable."],
+    ['C', "A shortcut through the forest hides thorns. Take the main road, even if it is longer."],
+    ['B', "Reconciliation is possible. The first kind word costs little and returns much."],
+    ['F', "A matter in dispute resolves slowly. Keep good records and stay polite."],
+    ['B', "Your home is a harbour of calm. Invite good people in."],
+    ['C', "The brightest market stall may sell cracked pottery. Inspect quality before you buy."],
+    ['G', "Heaven and earth are in harmony with your wishes. Ask clearly and expect a yes."],
+    ['F', "The seed is strong but the soil is dry. Add effort, and growth will follow."],
+    ['B', "A mentor appears when you admit what you do not yet know."],
+    ['F', "Do one thing at a time and everything gets done."],
+    ['C', "Hidden costs lurk in a tempting offer. Count twice."],
+    ['B', "A trip toward water brings refreshment and clarity."],
+    ['G', "The pearl is found in the deepest shell. Your persistence uncovers real treasure."],
+    ['F', "A friend needs you more than they say. Check in on them."],
+    ['B', "Your hard work is seen by those who matter. Recognition is on its way."],
+    ['C', "Strong emotions stir. Walk before you speak; the storm will blow itself out."],
+    ['F', "The well is deep and your rope is short. Prepare more thoroughly before you begin."],
+    ['B', "A lucky number keeps appearing. Notice the coincidences; they point the way."],
+    ['G', "The sun breaks through after a long rain. A burden you have carried is lifted at last."],
+    ['F', "Be patient with officials and paperwork. The answer is yes, but it comes slowly."],
+    ['C', "Do not reveal your plans too early. A seed must stay underground to sprout."],
+    ['B', "Affection is favoured. Speak warmly and sincerely to the one you care for."],
+    ['F', "The path splits around a stone. Either way leads home; choose with peace."],
+    ['B', "Saving a little each day builds a mountain. Start today."],
+    ['G', "The dragon and the tiger walk together. Strength and wisdom unite in your favour."],
+    ['C', "Beware of borrowed trouble. Help a friend without carrying their burden into your house."],
+    ['F', "An ordinary day hides a small blessing. Keep your eyes open."],
+    ['B', "Your voice carries weight now. Speak up for what is fair."],
+    ['C', "Do not sign in anger or buy in excitement. Sleep on it first."],
+    ['F', "The garden needs weeding before it can bloom. Drop one bad habit this week."],
+    ['G', "A treasure ship docks in your harbour. Work, career and income rise together."],
+    ['B', "Old friends reconnect, and a shared memory sparks a new opportunity."],
+    ['F', "Neither push nor pull. Let the matter ripen on the branch."],
+    ['C', "A small leak can sink a great ship. Fix the little problem today."],
+    ['B', "Your intuition is accurate this month. Trust the quiet inner voice."],
+    ['F', "Success arrives in stages. Celebrate each step, not only the summit."],
+    ['G', "The lotus blooms above muddy water. Your goodness rises above every difficulty."],
+    ['C', "Stay clear of gossip and disputes that do not concern you."],
+    ['B', "Kindness to strangers returns to you through unexpected doors."],
+    ['F', "The answer you seek may come from a book, a song or a dream. Pay attention."],
+    ['B', "Your efforts are like spring rain: gentle, steady and life-giving. Keep going."],
+    ['C', "Do not mistake a sunset for a sunrise. Confirm before you celebrate."],
+    ['F', "Clear one cluttered corner of your life and fresh energy will flow in."],
+    ['G', "The hundredth stick completes the circle. Your wishes return to harmony; walk forward in peace."]
+];
+
+// ── Core Application ─────────────────────────────────────────────────────────
+class KauChimApplication {
+    constructor() {
+        // Motion detection config (unchanged)
+        this.historySize = 6;
+        this.shakeDetectThreshold = 3.5; // delta to count as a shake
+        this.cooldown = 4000;
+        this.history = [];
+        this.lastTrigger = 0;
+        this.isProcessing = false;
+
+        // Charge system
+        this.charge = 0;           // 0..1
+        this.chargeRate = 1 / 3000; // fills over 3 000 ms
+        this.decayRate  = 1 / 1500; // drains over 1 500 ms
+        this.isActivelyShaking = false;
+        this.shakeTimeoutId = null;
+        this.lastFrameTime = null;
+        this.rafId = null;
+
+        // Input state
+        this.started = false;
+        this.motionSeen = false;       // real acceleration data has arrived
+        this.holdFallbackBound = false;
+        this.holdInterval = null;
+        this.isHolding = false;
+        this.inputBlockedUntil = 0;    // ignore input briefly after closing the scroll
+        this.recentKey = 'kauchim-recent-sticks';
+        this.recentSize = 5;           // never repeat any of the last 5 sticks
+
+        this.audio = new AudioEngine();
+    }
+
+    // Phones/tablets (coarse pointer) can shake; desktops get hold-only wording
+    get canProbablyShake() {
+        return this.motionSeen || window.matchMedia('(pointer: coarse)').matches;
+    }
+
+    readyPrompt() {
+        if (this.motionSeen) return "Container ready. Shake device, or press and hold the cup.";
+        if (this.canProbablyShake) return "Shake your phone, or press and hold the cup for 3 seconds.";
+        return "Press and hold the cup for 3 seconds.";
+    }
+
+    updateFooterHint() {
+        const hint = document.getElementById('footer-hint');
+        if (!hint) return;
+        hint.innerText = this.canProbablyShake
+            ? "HOLD FIRM & SHAKE DEVICE DELIBERATELY — OR PRESS & HOLD THE CUP"
+            : "PRESS & HOLD THE CUP (OR SPACE / ENTER) TO DRAW A STICK";
+    }
+
+    async requestSystemAccess() {
+        if (this.started) return;
+        this.started = true;
+        this.audio.init();
+
+        // Press-and-hold always works, alongside motion
+        this.enableHoldFallback();
+
+        let motionAllowed = false;
+        try {
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                // iOS 13+: must be called from this user gesture
+                const status = await DeviceMotionEvent.requestPermission();
+                motionAllowed = status === 'granted';
+            } else {
+                motionAllowed = typeof DeviceMotionEvent !== 'undefined';
+            }
+        } catch (e) {
+            motionAllowed = false;
+        }
+
+        if (motionAllowed) this.bindMotionDetection();
+
+        document.getElementById('gatekeeper').style.display = 'none';
+        this.updateFooterHint();
+        this.displayUIPrompt(motionAllowed || this.canProbablyShake
+            ? this.readyPrompt()
+            : "Motion unavailable. Press and hold the cup for 3 seconds.");
+
+        // If no motion data arrives within ~1.5 s, make sure the hold wording is shown
+        setTimeout(() => {
+            if (!this.motionSeen && !this.isProcessing && this.charge < 0.02) {
+                this.updateFooterHint();
+                this.displayUIPrompt(this.readyPrompt());
+            }
+        }, 1500);
+
+        this.startChargeLoop();
+    }
+
+    // ── rAF charge loop ────────────────────────────────────────────────────────
+    startChargeLoop() {
+        if (this.rafId) cancelAnimationFrame(this.rafId); // never run two loops
+        const loop = (timestamp) => {
+            if (!this.isProcessing) {
+                if (this.lastFrameTime !== null) {
+                    const dt = Math.min(timestamp - this.lastFrameTime, 100); // cap dt
+                    if (this.isActivelyShaking) {
+                        this.charge = Math.min(1, this.charge + this.chargeRate * dt);
+                    } else {
+                        this.charge = Math.max(0, this.charge - this.decayRate * dt);
+                    }
+                    this.applyChargeVisuals();
+                    if (this.charge >= 1) {
+                        this.rafId = null;
+                        this.executeOracleSelection();
+                        return; // pause loop until reset
+                    }
+                }
+                this.lastFrameTime = timestamp;
+            }
+            this.rafId = requestAnimationFrame(loop);
+        };
+        this.rafId = requestAnimationFrame(loop);
+    }
+
+    applyChargeVisuals() {
+        const stickPack = document.getElementById('stick-pack-ui');
+        const cylinder  = document.getElementById('cylinder-ui');
+        const container = document.getElementById('app-container');
+
+        // Sticks rise up to 95px out of cylinder top
+        stickPack.style.transform = `translateY(${-(this.charge * 95)}px)`;
+
+        // Gold glow intensifies with charge
+        cylinder.classList.toggle('charging', this.charge > 0.05);
+
+        // Shake animation only when actively shaking
+        container.classList.toggle('shaking', this.isActivelyShaking);
+
+        // Status prompt
+        const verb = this.isHolding ? 'holding' : 'shaking';
+        if (this.charge > 0.02) {
+            const secsLeft = Math.ceil((1 - this.charge) * 3);
+            if (this.isActivelyShaking) {
+                this.displayUIPrompt(secsLeft > 0 ? `Keep ${verb}... ${secsLeft}s` : "Almost there!");
+            } else {
+                this.displayUIPrompt(this.lastInputWasHold ? "Don't let go — keep holding!" : "Don't stop — keep shaking!");
+            }
+        } else {
+            this.displayUIPrompt(this.readyPrompt());
+        }
+    }
+
+    // Mark as actively shaking; auto-clears after 300 ms of no motion
+    markShaking(intensity) {
+        if (this.isProcessing) return;
+        this.isActivelyShaking = true;
+        this.audio.playClack(intensity);
+        clearTimeout(this.shakeTimeoutId);
+        this.shakeTimeoutId = setTimeout(() => {
+            this.isActivelyShaking = false;
+        }, 300);
+    }
+
+    bindMotionDetection() {
+        window.addEventListener('devicemotion', (e) => this.evaluateMotionVectors(e), { passive: true });
+    }
+
+    // Press-and-hold fallback: pointer events (mouse, touch, pen), with
+    // mouse/touch fallback for old browsers, plus Space/Enter on the keyboard.
+    enableHoldFallback() {
+        if (this.holdFallbackBound) return;
+        this.holdFallbackBound = true;
+        const stage = document.getElementById('shaker-stage');
+
+        const startHold = (e) => {
+            if (this.isHolding) return;
+            if (this.isProcessing || Date.now() < this.inputBlockedUntil) return;
+            if (e && e.cancelable && e.type !== 'keydown') e.preventDefault();
+            this.audio.init();
+            this.isHolding = true;
+            this.lastInputWasHold = true;
+            this.markShaking(18);
+            this.holdInterval = setInterval(() => this.markShaking(18), 140);
+        };
+        const stopHold = () => {
+            clearInterval(this.holdInterval);
+            this.holdInterval = null;
+            this.isHolding = false;
+        };
+        this.stopHold = stopHold;
+
+        if (window.PointerEvent) {
+            stage.addEventListener('pointerdown', (e) => {
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                try { stage.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+                startHold(e);
+            });
+            stage.addEventListener('pointerup', stopHold);
+            stage.addEventListener('pointercancel', stopHold);
+            stage.addEventListener('lostpointercapture', stopHold);
+        } else {
+            stage.addEventListener('mousedown', (e) => { if (e.button === 0) startHold(e); });
+            stage.addEventListener('touchstart', startHold, { passive: false });
+            stage.addEventListener('touchend', stopHold);
+            stage.addEventListener('touchcancel', stopHold);
+            window.addEventListener('mouseup', stopHold);
+        }
+        stage.addEventListener('contextmenu', (e) => e.preventDefault()); // no long-press menu
+        window.addEventListener('blur', stopHold);
+
+        // Keyboard: Space / Enter (ignored while a button has focus or the scroll is open)
+        const isKey = (e) => e.code === 'Space' || e.key === ' ' || e.key === 'Enter';
+        document.addEventListener('keydown', (e) => {
+            if (!isKey(e) || e.repeat) return;
+            if (e.target && e.target.closest && e.target.closest('button, a, input, textarea')) return;
+            if (document.getElementById('scroll-modal').classList.contains('active')) return;
+            if (document.getElementById('gatekeeper').style.display !== 'none') return;
+            e.preventDefault();
+            startHold(e);
+        });
+        document.addEventListener('keyup', (e) => { if (isKey(e)) stopHold(); });
+    }
+
+    evaluateMotionVectors(event) {
+        const acc = event.acceleration;
+        if (acc && acc.x !== null && acc.x !== undefined && !this.motionSeen) {
+            this.motionSeen = true;
+            this.updateFooterHint();
+        }
+        if (!acc?.x || this.isProcessing || Date.now() - this.lastTrigger < this.cooldown) return;
+        if (Date.now() < this.inputBlockedUntil) return;
+
+        const magnitude = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2);
+        this.history.push({ t: Date.now(), v: magnitude });
+        if (this.history.length > this.historySize) this.history.shift();
+
+        if (this.history.length >= 4) {
+            const forces = this.history.map(h => h.v);
+            const delta  = Math.max(...forces) - Math.min(...forces);
+            if (delta > this.shakeDetectThreshold) {
+                if (!this.isHolding) this.lastInputWasHold = false;
+                this.markShaking(delta);
+            }
+        }
+    }
+
+    // Unbiased crypto random integer in 1..max
+    cryptoRoll(max) {
+        const buf = new Uint32Array(1);
+        const limit = Math.floor(0x100000000 / max) * max;
+        do { window.crypto.getRandomValues(buf); } while (buf[0] >= limit);
+        return (buf[0] % max) + 1;
+    }
+
+    // Draw a stick number 1..100, never one of the last few drawn
+    drawStickNumber() {
+        let recent = store.get(this.recentKey, []);
+        if (!Array.isArray(recent)) recent = [];
+        const pool = [];
+        for (let n = 1; n <= STICKS.length; n++) if (!recent.includes(n)) pool.push(n);
+        const stickNo = pool[this.cryptoRoll(pool.length) - 1];
+        recent.push(stickNo);
+        store.set(this.recentKey, recent.slice(-this.recentSize));
+        return stickNo;
+    }
+
+    executeOracleSelection() {
+        this.isProcessing = true;
+        this.lastTrigger = Date.now();
+        this.history = [];
+        this.charge = 0;
+        if (this.stopHold) this.stopHold();
+        this.isActivelyShaking = false;
+        clearTimeout(this.shakeTimeoutId);
+        document.getElementById('app-container').classList.remove('shaking');
+        document.getElementById('cylinder-ui').classList.remove('charging');
+        // Reset sticks to base position before eject animation
+        document.getElementById('stick-pack-ui').style.transform = 'translateY(0)';
+        this.displayUIPrompt("A stick is emerging...");
+
+        const drawLotto = (max, total) => {
+            const set = new Set();
+            while (set.size < total) set.add(this.cryptoRoll(max));
+            return [...set].sort((a, b) => a - b);
+        };
+
+        const stickNo = this.drawStickNumber();
+        const primaryNumbers = drawLotto(69, 5);
+        const goldenPowerBall = this.cryptoRoll(26);
+
+        const stickUI = document.getElementById('rising-stick');
+        document.getElementById('rising-stick-label').innerText = 'No. ' + stickNo;
+        stickUI.style.display = 'block';
+        stickUI.classList.add('ejecting');
+
+        this.lastStickNo = stickNo;
+        this.revealTimer = setTimeout(() => this.renderScroll(stickNo, primaryNumbers, goldenPowerBall), 1200);
+    }
+
+    renderScroll(stickNo, mainNumbers, bonusBall) {
+        const [levelCode, text] = STICKS[stickNo - 1];
+        const level = FORTUNE_LEVELS[levelCode];
+        document.getElementById('stick-number').innerText = 'Stick No. ' + stickNo;
+        const levelNode = document.getElementById('fortune-level');
+        levelNode.innerText = level.label;
+        levelNode.className = 'fortune-level ' + level.cls;
+        document.getElementById('fortune-destiny').innerText = text;
+
+        const numbersContainer = document.getElementById('lotto-numbers');
+        numbersContainer.innerHTML = '';
+
+        mainNumbers.forEach(num => {
+            const node = document.createElement('div');
+            node.className = 'ball';
+            node.innerText = num;
+            numbersContainer.appendChild(node);
+        });
+
+        const specialNode = document.createElement('div');
+        specialNode.className = 'ball special';
+        specialNode.innerText = bonusBall;
+        numbersContainer.appendChild(specialNode);
+
+        document.getElementById('scroll-modal').classList.add('active');
+        this.displayUIPrompt(`Stick No. ${stickNo} — destiny revealed.`);
+    }
+
+    resetStage() {
+        clearTimeout(this.revealTimer);
+        const stickUI = document.getElementById('rising-stick');
+        stickUI.classList.remove('ejecting');
+        stickUI.style.display = 'none';
+        document.getElementById('scroll-modal').classList.remove('active');
+
+        // Fully reset hold / shake state so nothing carries over
+        if (this.stopHold) this.stopHold();
+        clearTimeout(this.shakeTimeoutId);
+        this.isActivelyShaking = false;
+        this.history = [];
+        this.charge = 0;
+        this.lastFrameTime = null;
+        document.getElementById('app-container').classList.remove('shaking');
+        document.getElementById('cylinder-ui').classList.remove('charging');
+        document.getElementById('stick-pack-ui').style.transform = 'translateY(0)';
+
+        // Ignore the pointer/touch events from the tap that closed the scroll
+        this.inputBlockedUntil = Date.now() + 500;
+        this.isProcessing = false;
+        this.displayUIPrompt(this.readyPrompt());
+        // Resume charge loop
+        this.startChargeLoop();
+    }
+
+    displayUIPrompt(msg) {
+        const el = document.getElementById('status-prompt');
+        if (el.innerText !== msg) el.innerText = msg;
+    }
+}
+
+const app = new KauChimApplication();
+document.getElementById('btn-grant-access').addEventListener('click', () => app.requestSystemAccess());
+document.getElementById('btn-return').addEventListener('click', () => app.resetStage());
+</script>
+</body>
+</html>

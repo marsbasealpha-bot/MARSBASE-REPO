@@ -1,35 +1,29 @@
-const CACHE_NAME = 'cosmic-kau-chim-v1';
-const ASSETS = [
-  '/cosmic/',
-  '/cosmic/index.html',
-  '/cosmic/manifest.json',
-  '/cosmic/icon-192.png',
-  '/cosmic/icon-512.png'
-];
+// Retired service worker for the old /cosmic/ address.
+// Phones that installed the old app still have a worker registered here that
+// serves the old page from cache. When the browser checks for an update it gets
+// this file, which deletes the old cache, unregisters itself and sends any open
+// pages to the new address, /Cosmic-Kau-Chim/.
+self.addEventListener('install', () => self.skipWaiting());
 
-// Install: pre-cache all assets
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-  );
-  self.skipWaiting();
-});
-
-// Activate: clean up old caches
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
+  event.waitUntil((async () => {
+    // Take control first: client.navigate() only works on pages this worker controls
+    // (covers an old page served from the browser's HTTP cache that re-registers us).
+    await self.clients.claim();
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k => k === 'cosmic-kau-chim-v1').map(k => caches.delete(k)));
+    const pages = await self.clients.matchAll({ type: 'window' });
+    for (const client of pages) {
+      const url = new URL(client.url);
+      if (/^\/cosmic(\/|$)/.test(url.pathname)) {
+        try { await client.navigate('/Cosmic-Kau-Chim/' + url.search + url.hash); } catch (e) { /* ignore */ }
+      }
+    }
+    await self.registration.unregister();
+  })());
 });
 
-// Fetch: cache-first strategy for offline support
+// Never serve from the old cache again; go straight to the network.
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      return cached || fetch(event.request).catch(() => caches.match('/cosmic/index.html'));
-    })
-  );
+  event.respondWith(fetch(event.request));
 });
